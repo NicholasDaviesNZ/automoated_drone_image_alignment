@@ -16,6 +16,11 @@ batch_size = 4
 
 
 def invert_affine_transform(affine_matrix):
+    """
+    Takes in the affine matrix used to convert the georeferenced image to a modified on for training
+    Returns the inverse - the inverse affine is the matrix used to convert the modified image back to the georeferenced image ie the one we are trying to predict
+    """
+    
     a, b, c, d, e, f = affine_matrix
 
     # Calculate the determinant
@@ -96,6 +101,13 @@ def combined_affine_transform(image, rotation_range=(-5, 5), translation=(0.05, 
 
 
 class ImagePairDataset(Dataset):
+    """
+    This dataset is used to generate training/testing data. It takes in the folder where the trial image 
+    folders are and a list of those trial folders we want to sample from along with n, the number of image pairs we want to generate
+    for each n, it selects 2 random images from the same trial folder, it takes one of them and applies a random transofmation to it
+    and calculates the inverse of the affine matrix used to cause the transform (this is the affine to transform back to the origonal)
+    The output is the base image (untransformed), the transformed image, and the inv_affine matrix which takes the transoformed image back to the georeferenced image
+    """
     def __init__(self, image_pair_folder, list_of_trial_folders, n=1000, transform=None):
         self.image_pair_folder = image_pair_folder
         self.list_of_trial_folders = list_of_trial_folders
