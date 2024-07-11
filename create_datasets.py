@@ -96,10 +96,11 @@ def combined_affine_transform(image, rotation_range=(-5, 5), translation=(0.05, 
 
 
 class ImagePairDataset(Dataset):
-    def __init__(self, image_pair_folder, list_of_trial_folders, transform=None):
+    def __init__(self, image_pair_folder, list_of_trial_folders, n=1000, transform=None):
         self.image_pair_folder = image_pair_folder
         self.list_of_trial_folders = list_of_trial_folders
         self.transform = transform
+        self.n = n
         self.image_pairs = self._load_image_pairs()
 
     def _load_image_pairs(self):
@@ -125,11 +126,11 @@ class ImagePairDataset(Dataset):
         return image_pairs
 
     def __len__(self):
-        return len(self.image_pairs)
+        return self.n
 
     def __getitem__(self, idx):
         # load the image pair
-        img1, img2 = self.image_pairs[idx]
+        img1, img2 = self.image_pairs[0]
         # send img2 to get randomly transformed - expect back img2_transformed and the affine matrix
         img2_transformed, affine_matrix = combined_affine_transform(img2)
 
@@ -152,7 +153,7 @@ class ImagePairDataset(Dataset):
 
 
 # dataloader
-dataset = ImagePairDataset(image_pair_folder, list_of_trial_folders)
+dataset = ImagePairDataset(image_pair_folder, list_of_trial_folders, n=10)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 for batch_idx, batch in enumerate(dataloader):
