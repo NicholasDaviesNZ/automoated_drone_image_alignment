@@ -1,0 +1,1 @@
+# automoated_drone_image_alignment
