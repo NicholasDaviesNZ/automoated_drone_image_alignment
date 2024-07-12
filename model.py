@@ -36,6 +36,18 @@ def live_plot(iteration, loss, epoch_list, val_loss_list):
     
 
 class STN(nn.Module):
+    """
+    Spatial Transformer Network model class. it takes in the image input size and 
+    batch size to calculate the size of the output of the localization network 
+    so that we know the input size of the ST network.
+    self.localisation takes in an image and learns features in a smaller space
+    Both the reference and transofrm image are run though this network
+    self.affine regressor is the network which takes in the output of both localisation 
+    networks as a single vector - concat the outputs of the two localisations 
+    for input to the affine_regressor, the output is the affine matrix to 
+    align image 1 with image 2. Note image 1 is the base image, and image 2 is 
+    the one assocated with the output affine matrix.
+    """
     def __init__(self, padded_image_size, batch_size):
         super(STN, self).__init__()
         # inputs needed to calculate the input shape to the regressor
@@ -80,8 +92,6 @@ class STN(nn.Module):
 
         img1_xs = self.localization(img1)
         img2_xs = self.localization(img2)
-        #print("Shape of img1_xs after localization:", img1_xs.shape) 
-        #print("Shape of img2_xs after localization:", img2_xs.shape)
 
         img1_xs = img1_xs.view(img1_xs.size(0), -1)
         img2_xs = img2_xs.view(img2_xs.size(0), -1)
@@ -122,8 +132,6 @@ def train_stn(dataloader, num_epochs=num_epochs, learning_rate=learning_rate):
             
             # Forward pass through STN
             predicted_affine = stn(img1, img2)
-            #print(affine.shape)
-            #print(predicted_affine.shape)
             
             # Calculate the loss between the transformed image and the georeferenced image
             loss = criterion(predicted_affine, affine)
@@ -166,6 +174,4 @@ def train_stn(dataloader, num_epochs=num_epochs, learning_rate=learning_rate):
     print("Training complete!")
     return stn
 
-# Example usage:
-# Assuming `dataloader` is defined and provides batches of (img1, img2, affine)
 stn_model = train_stn(dataloader, num_epochs=num_epochs, learning_rate=learning_rate)
