@@ -2,17 +2,11 @@
 import os
 import math
 import numpy as np
-import torch.nn as nn
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from PIL import Image, ImageOps
 import random
 import torch
-image_pair_folder = '/workspaces/automoated_drone_image_alignment/georeferenced_image_pairs/'
-list_of_trial_folders = os.listdir(image_pair_folder)
-batch_size = 4
-
-
 
 
 def invert_affine_transform(affine_matrix):
@@ -42,19 +36,19 @@ def invert_affine_transform(affine_matrix):
     return inv_affine
 
 
-def pad_image(img, padding = (5000, 5000)):
+def pad_image(img, padding = (1500, 1500)):
     pad_width, pad_height = padding
     img_width, img_height = img.size
     
     if img_width > pad_width:
-        print("Warning: padding width is smaller than image width, cropping image to fit the padding size.")
+        #print("Warning: padding width is smaller than image width, cropping image to fit the padding size.")
         left = (img_width - pad_width) // 2
         right = left + pad_width
         img = img.crop((left, 0, right, img_height))
 
     # Check if the image height is greater than the final height
     if img_height > pad_height:
-        print("Warning: padding height is smaller than image height, cropping image to fit the padding size.")
+        #print("Warning: padding height is smaller than image height, cropping image to fit the padding size.")
         top = (img_height - pad_height) // 2
         bottom = top + pad_height
         img = img.crop((0, top, img_width, bottom))
@@ -64,7 +58,7 @@ def pad_image(img, padding = (5000, 5000)):
 
     return padded_img
 
-def combined_affine_transform(image, rotation_range=(-5, 5), translation=(0.05, 0.05), scale=(0.95, 1.05), padded_size = (5000, 5000)):
+def combined_affine_transform(image, rotation_range=(-5, 5), translation=(0.05, 0.05), scale=(0.95, 1.05), padded_size = (1500, 1500)):
     
     """
     Function to do a random affine transform on an image,
@@ -126,12 +120,13 @@ class ImagePairDataset(Dataset):
     and calculates the inverse of the affine matrix used to cause the transform (this is the affine to transform back to the origonal)
     The output is the base image (untransformed), the transformed image, and the inv_affine matrix which takes the transoformed image back to the georeferenced image
     """
-    def __init__(self, image_pair_folder, list_of_trial_folders, n=1000, padded_size = (5000, 5000), transform=None):
+    def __init__(self, image_pair_folder, list_of_trial_folders, n=1000, padded_size = (1500, 1500), output_res = (1000,1000), transform=None):
         self.image_pair_folder = image_pair_folder
         self.list_of_trial_folders = list_of_trial_folders
         self.transform = transform
         self.n = n
         self.padded_size = padded_size
+        self.output_res = output_res
 
     def _load_image_pairs(self):
         random_trial_folder = random.choice(self.list_of_trial_folders) # note can add weights here if wanted but have to think about how it will effect data balance
@@ -147,7 +142,9 @@ class ImagePairDataset(Dataset):
         image_paths = [os.path.join(folder_path, img) for img in random_images]
         # Load images
         img1 = Image.open(image_paths[0]).convert('RGB')
+        img1 = img1.resize(self.output_res, Image.LANCZOS)
         img2 = Image.open(image_paths[1]).convert('RGB')
+        img2 = img2.resize(self.output_res, Image.LANCZOS)
         return img1, img2
     def __len__(self):
         return self.n
@@ -178,15 +175,9 @@ class ImagePairDataset(Dataset):
     
 
 
-# dataloader
-dataset = ImagePairDataset(image_pair_folder, list_of_trial_folders, n=100, padded_size=(2000, 2000))
-dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+# dataloader interface for other py files
+def get_dataloader(image_pair_folder, list_of_trial_folders, batch_size, n=1000, padded_size=(1500, 1500), output_res = (1000, 1000)):
+    dataset = ImagePairDataset(image_pair_folder, list_of_trial_folders, n=n, padded_size=padded_size, output_res=output_res)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    return dataloader
 
-for batch_idx, batch in enumerate(dataloader):
-    img1_batch, img2_transformed_batch, affine_batch = batch
-
-    # Print batch information
-    print(f"Batch {batch_idx}:")
-    print(f"img1_batch.shape: {img1_batch.shape}")
-    print(f"img2_transformed_batch.shape: {img2_transformed_batch.shape}")
-    print(f"affine_batch.shape: {affine_batch.shape}")
