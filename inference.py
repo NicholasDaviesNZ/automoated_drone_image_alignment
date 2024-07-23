@@ -2,8 +2,8 @@ from model import inference
 from PIL import Image, ImageOps
 from create_datasets import pad_image
 
-base_image_path = "/workspaces/automoated_drone_image_alignment/georeferenced_image_pairs/beets_desication/beet_desication_02162024_georeferenced.png"
-new_image_path = "/workspaces/automoated_drone_image_alignment/georeferenced_image_pairs/beets_desication/beet_desication_02162024_georeferenced.png"
+base_image_path = "/workspaces/automoated_drone_image_alignment/georeferenced_image_pairs/radish_desication_mats/odm_orthophoto_08032024_georeferenced.png"
+new_image_path = "/workspaces/automoated_drone_image_alignment/test_image/odm_orthophoto_radish_desication.tif"
 padded_image_size=(1280, 1280) 
 output_res = (1024,1024)
 
@@ -28,16 +28,16 @@ transformed_image = transformed_image.resize(new_image.size, Image.LANCZOS)
 transformed_image.save('transformed_image.png')
 
 
-# # the following is just to debug that the image minipulation is working correctly, it is but will leave this here for now
-# base_image = Image.open(base_image_path).convert('RGB')
-# base_image_resize = base_image.resize(output_res, Image.LANCZOS)
-# base_image_padded = pad_image(base_image_resize, padding = padded_image_size)
-# base_transformed_image = base_image_padded.transform(
-#         base_image_padded.size,
-#         Image.AFFINE,
-#         [1, 0, 0, 0, 1, 0], # affine matrix which does nothing
-#         resample=Image.BILINEAR
-#     )
+# the following is just to debug that the image minipulation is working correctly, it is but will leave this here for now
+base_image = Image.open(base_image_path).convert('RGB')
+base_image_resize = base_image.resize(output_res, Image.LANCZOS)
+base_image_padded = pad_image(base_image_resize, padding = padded_image_size)
+base_transformed_image = base_image_padded.transform(
+        base_image_padded.size,
+        Image.AFFINE,
+        [1, 0, 0, 0, 1, 0], # affine matrix which does nothing
+        resample=Image.BILINEAR
+    )
 
-# base_transformed_image = base_transformed_image.resize(base_image.size, Image.LANCZOS)
-# base_transformed_image.save('base_transformed_image.png')
+base_transformed_image = base_transformed_image.resize(base_image.size, Image.LANCZOS)
+base_transformed_image.save('base_transformed_image.png')
