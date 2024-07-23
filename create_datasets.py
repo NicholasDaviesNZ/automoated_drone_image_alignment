@@ -36,7 +36,7 @@ def invert_affine_transform(affine_matrix):
     return inv_affine
 
 
-def pad_image(img, padding = (1500, 1500)):
+def pad_image(img, padding = (1280, 1280)):
     pad_width, pad_height = padding
     img_width, img_height = img.size
     
@@ -58,7 +58,7 @@ def pad_image(img, padding = (1500, 1500)):
 
     return padded_img
 
-def combined_affine_transform(image, rotation_range=(-5, 5), translation=(0.05, 0.05), scale=(0.95, 1.05), padded_size = (1500, 1500)):
+def combined_affine_transform(image, rotation_range=(-5, 5), translation=(0.05, 0.05), scale=(0.95, 1.05), padded_size = (1280, 1280)):
     
     """
     Function to do a random affine transform on an image,
@@ -110,7 +110,9 @@ def combined_affine_transform(image, rotation_range=(-5, 5), translation=(0.05, 
     
     return transformed_image, inv_affine
 
-
+def pil_to_tensor(img):
+    img_tensor = torch.tensor(np.array(img)).permute(2, 0, 1).float() # get into pytorch order
+    return img_tensor / 255.0  # Normalize to [0, 1]
 
 class ImagePairDataset(Dataset):
     """
@@ -120,7 +122,7 @@ class ImagePairDataset(Dataset):
     and calculates the inverse of the affine matrix used to cause the transform (this is the affine to transform back to the origonal)
     The output is the base image (untransformed), the transformed image, and the inv_affine matrix which takes the transoformed image back to the georeferenced image
     """
-    def __init__(self, image_pair_folder, list_of_trial_folders, n=1000, padded_size = (1500, 1500), output_res = (1000,1000), transform=None):
+    def __init__(self, image_pair_folder, list_of_trial_folders, n=1000, padded_size = (1280, 1280), output_res = (1024,1024), transform=None):
         self.image_pair_folder = image_pair_folder
         self.list_of_trial_folders = list_of_trial_folders
         self.transform = transform
@@ -161,22 +163,20 @@ class ImagePairDataset(Dataset):
             img1_padded = self.transform(img1_padded)
             img2_transformed = self.transform(img2_transformed)
 
-        img1_padded = self.pil_to_tensor(img1_padded)
-        img2_transformed = self.pil_to_tensor(img2_transformed)
+        img1_padded = pil_to_tensor(img1_padded)
+        img2_transformed = pil_to_tensor(img2_transformed)
         affine_tensor = torch.FloatTensor(affine_matrix)
         
         return img1_padded, img2_transformed, affine_tensor
     
-    def pil_to_tensor(self, img):
-        img_tensor = torch.tensor(np.array(img)).permute(2, 0, 1).float() # get into pytorch order
-        return img_tensor / 255.0  # Normalize to [0, 1]
+
     
     
     
 
 
 # dataloader interface for other py files
-def get_dataloader(image_pair_folder, list_of_trial_folders, batch_size, n=1000, padded_size=(1500, 1500), output_res = (1000, 1000)):
+def get_dataloader(image_pair_folder, list_of_trial_folders, batch_size, n=1000, padded_size=(1280, 1280), output_res = (1024, 1024)):
     dataset = ImagePairDataset(image_pair_folder, list_of_trial_folders, n=n, padded_size=padded_size, output_res=output_res)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     return dataloader

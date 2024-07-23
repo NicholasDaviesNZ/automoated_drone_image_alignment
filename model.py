@@ -1,25 +1,9 @@
-import os
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import torch
-from create_datasets import get_dataloader
-torch.cuda.empty_cache()
-
-image_pair_folder = '/workspaces/automoated_drone_image_alignment/georeferenced_image_pairs/'
-list_of_trial_folders = os.listdir(image_pair_folder)
-batch_size = 16
-num_epochs = 100
-learning_rate = 0.0002
-training_set_size = 500
-val_set_size = 20
-padded_image_size = (1280, 1280)
-output_res = (1024,1024)
-
-dataloader = get_dataloader(image_pair_folder, list_of_trial_folders, batch_size, n=training_set_size, padded_size=padded_image_size, output_res=output_res)
-dataloader_val = get_dataloader(image_pair_folder, list_of_trial_folders, batch_size, n=val_set_size, padded_size=padded_image_size, output_res=output_res)
-
-
+from PIL import Image, ImageOps
+from create_datasets import pil_to_tensor, pad_image
 
 def live_plot(iteration, loss, epoch_list, val_loss_list):
     plt.figure(figsize=(10, 5))
@@ -33,7 +17,6 @@ def live_plot(iteration, loss, epoch_list, val_loss_list):
     # Save plot to file
     plt.savefig('training_loss.jpg')
     plt.close() 
-    
 
 class STN(nn.Module):
     """
@@ -105,7 +88,7 @@ class STN(nn.Module):
     
     
 
-def train_stn(dataloader, num_epochs=num_epochs, learning_rate=learning_rate):
+def train_stn(dataloader, dataloader_val, num_epochs=10, learning_rate=0.001, padded_image_size=(1280, 1280), batch_size=16, best_model_file = 'best_model.pth'):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
     
@@ -166,7 +149,7 @@ def train_stn(dataloader, num_epochs=num_epochs, learning_rate=learning_rate):
         
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
-                torch.save(stn.state_dict(), 'best_model.pth')
+                torch.save(stn.state_dict(), best_model_file)
             
             live_plot(iteration_list, loss_list, epoch_list, val_loss_list)
             print(f'Epoch [{epoch + 1}/{num_epochs}], Validation Loss: {val_loss:.4f}')
@@ -174,4 +157,33 @@ def train_stn(dataloader, num_epochs=num_epochs, learning_rate=learning_rate):
     print("Training complete!")
     return stn
 
-stn_model = train_stn(dataloader, num_epochs=num_epochs, learning_rate=learning_rate)
+    
+def inference(base_image_path, new_image_path, padded_image_size=(1280, 1280), output_res = (1000,1000), best_model_file = 'best_model.pth'):
+    model = STN(padded_image_size, 1)
+    model.load_state_dict(torch.load(best_model_file))
+    model.eval()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    
+    img1 = Image.open(base_image_path).convert('RGB')
+    img1 = img1.resize(output_res, Image.LANCZOS)
+    
+    img2 = Image.open(new_image_path).convert('RGB')
+    img2 = img2.resize(output_res, Image.LANCZOS)
+        
+    img1_padded = pad_image(img1, padding = padded_image_size)
+    img2_padded = pad_image(img2, padding = padded_image_size)
+    
+    base_img = pil_to_tensor(img1_padded).unsqueeze(0)
+    new_img = pil_to_tensor(img2_padded).unsqueeze(0)
+    
+    base_img = base_img.to(device)
+    new_img = new_img.to(device)
+    with torch.no_grad(): 
+        affine_matrix = model(base_img, new_img)
+    
+    affine_matrix = affine_matrix.cpu().numpy().flatten().tolist()
+    return affine_matrix
+
+
+
