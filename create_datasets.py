@@ -39,7 +39,11 @@ def invert_affine_transform(affine_matrix):
 def pad_image(img, padding = (1280, 1280)):
     pad_width, pad_height = padding
     img_width, img_height = img.size
-    
+    left = (pad_width - img_width) // 2
+    top = (pad_height - img_height) // 2
+    right = pad_width - img_width - left
+    bottom = pad_height - img_height - top
+
     if img_width > pad_width:
         #print("Warning: padding width is smaller than image width, cropping image to fit the padding size.")
         left = (img_width - pad_width) // 2
@@ -54,11 +58,12 @@ def pad_image(img, padding = (1280, 1280)):
         img = img.crop((0, top, img_width, bottom))
         
     # adding padding to the image so that it doesnt cut off anything during the transform - note in the absolute extremes the padding does nto acount for rotation so may crop a little
-    padded_img = ImageOps.pad(img, (pad_width, pad_height), color=0)
+    padded_img = Image.new('RGB', (pad_width, pad_height), color=0)
+    padded_img.paste(img, (left, top))
 
     return padded_img
 
-def combined_affine_transform(image, rotation_range=(-5, 5), translation=(0.05, 0.05), scale=(0.95, 1.05), padded_size = (1280, 1280)):
+def combined_affine_transform(image, rotation_range=(-5, 5), translation=(0.02, 0.02), scale=(0.95, 1.05), padded_size = (1280, 1280)):
     
     """
     Function to do a random affine transform on an image,
@@ -97,7 +102,6 @@ def combined_affine_transform(image, rotation_range=(-5, 5), translation=(0.05, 
     
     affine = (a, b, c, d, e, f)
     inv_affine = invert_affine_transform(affine)
-    
 
     padded_image = pad_image(image, padding = padded_size)
     # apply affine transformation

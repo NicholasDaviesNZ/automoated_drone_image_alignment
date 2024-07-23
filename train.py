@@ -8,10 +8,10 @@ image_pair_folder = '/workspaces/automoated_drone_image_alignment/georeferenced_
 list_of_trial_folders = os.listdir(image_pair_folder)
 best_model_file = 'best_model.pth'
 batch_size = 16
-num_epochs = 100
-learning_rate = 0.0002
-training_set_size = 500
-val_set_size = 20
+num_epochs = 200
+learning_rate = 0.0005
+training_set_size = 1024
+val_set_size = 256
 padded_image_size = (1280, 1280)
 output_res = (1024,1024)
 

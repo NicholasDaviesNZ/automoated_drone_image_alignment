@@ -141,7 +141,6 @@ def train_stn(dataloader, dataloader_val, num_epochs=10, learning_rate=0.001, pa
                 
                 loss = criterion(predicted_affine, affine)
                 val_loss += loss.item()
-                print(val_loss)
     
             val_loss /= len(dataloader_val)  
             val_loss_list.append(val_loss)
