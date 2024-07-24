@@ -60,13 +60,16 @@ class STN(nn.Module):
 
         # Regressor for the 3 * 2 affine matrix
         self.affine_regressor = nn.Sequential(
-            nn.Linear(dummy_size, 128), 
+            nn.Linear(dummy_size, 256),
+            nn.ReLU(True),
+            nn.Dropout(p=0.3),
+            nn.Linear(256, 128),
             nn.ReLU(True),
             nn.Dropout(p=0.3),
             nn.Linear(128, 32),
             nn.ReLU(True),
             nn.Dropout(p=0.3),
-            nn.Linear(32, 6)  
+            nn.Linear(32, 6)
         )
 
 
