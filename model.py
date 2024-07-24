@@ -40,14 +40,17 @@ class STN(nn.Module):
         # Localization network
         self.localization = nn.Sequential(
             nn.Conv2d(3, 8, kernel_size=7),
+            nn.BatchNorm2d(8),
             nn.MaxPool2d(2, stride=2),
             nn.ReLU(True),
             nn.Dropout(p=0.3),
-            nn.Conv2d(8, 10, kernel_size=5),
+            nn.Conv2d(8, 12, kernel_size=5),
+            nn.BatchNorm2d(12),
             nn.MaxPool2d(2, stride=2),
             nn.ReLU(True),
             nn.Dropout(p=0.3),
-            nn.Conv2d(10, 12, kernel_size=3),
+            nn.Conv2d(12, 16, kernel_size=3),
+            nn.BatchNorm2d(16),
             nn.MaxPool2d(2, stride=2),
             nn.ReLU(True)
         )

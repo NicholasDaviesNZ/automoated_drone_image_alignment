@@ -7,7 +7,7 @@ torch.cuda.empty_cache()
 image_pair_folder = '/workspaces/automoated_drone_image_alignment/georeferenced_image_pairs/'
 list_of_trial_folders = os.listdir(image_pair_folder)
 best_model_file = 'best_model.pth'
-batch_size = 16
+batch_size = 8
 num_epochs = 200
 learning_rate = 0.0005
 training_set_size = 1024
