@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 from PIL import Image, ImageOps
 from create_datasets import pil_to_tensor, pad_image
+import os
 
 def live_plot(iteration, loss, epoch_list, val_loss_list):
     plt.figure(figsize=(10, 5))
@@ -40,17 +41,17 @@ class STN(nn.Module):
         # Localization network
         self.localization = nn.Sequential(
             nn.Conv2d(3, 8, kernel_size=7),
-            nn.BatchNorm2d(8),
+            # nn.BatchNorm2d(8),
             nn.MaxPool2d(2, stride=2),
             nn.ReLU(True),
             nn.Dropout(p=0.3),
             nn.Conv2d(8, 12, kernel_size=5),
-            nn.BatchNorm2d(12),
+            # nn.BatchNorm2d(12),
             nn.MaxPool2d(2, stride=2),
             nn.ReLU(True),
             nn.Dropout(p=0.3),
             nn.Conv2d(12, 16, kernel_size=3),
-            nn.BatchNorm2d(16),
+            # nn.BatchNorm2d(16),
             nn.MaxPool2d(2, stride=2),
             nn.ReLU(True)
         )
@@ -92,7 +93,10 @@ class STN(nn.Module):
 
         return affine
     
-    
+def load_model(model, model_file):
+    model.load_state_dict(torch.load(model_file))
+    model.eval()  # Set the model to evaluation mode
+    return model
 
 def train_stn(dataloader, dataloader_val, num_epochs=10, learning_rate=0.001, padded_image_size=(1280, 1280), batch_size=16, best_model_file = 'best_model.pth'):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -100,6 +104,9 @@ def train_stn(dataloader, dataloader_val, num_epochs=10, learning_rate=0.001, pa
     
     # Initialize the STN model
     stn = STN(padded_image_size, batch_size).to(device)
+    
+    if os.path.exists("/workspaces/automoated_drone_image_alignment/best_model.pth"):
+        stn = load_model(stn, best_model_file)
     
     # Loss function and optimizer
     criterion = nn.MSELoss()

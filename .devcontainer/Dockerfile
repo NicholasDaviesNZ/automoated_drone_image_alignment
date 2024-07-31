@@ -35,6 +35,7 @@ RUN /opt/conda/bin/conda config --set ssl_verify False \
     && ln -s /opt/conda/bin/pip /usr/local/bin/pip3
 
 # Install requirements
+RUN pip install --upgrade pip
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
